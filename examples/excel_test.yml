@@ -1,0 +1,31 @@
+---
+- name: "Test write excel"
+  hosts: localhost
+  gather_facts: false
+  vars:
+    data:
+      - first-name: James
+        name: Smith
+        number: 38313
+      - first-name: Michael
+        name: Smith
+        number: 34810
+      - first-name: Maria
+        name: Garcia
+        number: 32092
+
+  tasks:
+
+    - name: "Add a sheet in a non existant workbook"
+      excel:
+        operation: write
+        data: "{{ data }}"
+        table_name: pop_first_names
+        path: "{{ playbook_dir }}"
+        file: "test1.xlsx"
+        worksheet: "my_title"
+        create: true
+
+
+
+...
