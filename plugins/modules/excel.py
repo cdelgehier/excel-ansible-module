@@ -166,7 +166,7 @@ def main():
                     )
                 )
             else:
-                workbook = Workbook(write_only=True)
+                workbook = Workbook()
         else:
 
             workbook = openpyxl.load_workbook(filename=file_fullpath, data_only=True)
@@ -177,6 +177,10 @@ def main():
             workbook.remove(workbook[worksheet])
 
         new_worksheet = workbook.create_sheet(title=worksheet)
+        if "Sheet" in sheetnames:
+            # sheet already exists
+            workbook.remove(workbook["Sheet"])
+
 
         # write data
         headers = list(data[0].keys())
