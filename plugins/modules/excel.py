@@ -37,6 +37,15 @@ version_added: "2.9"
 
 options:
 
+  column_width:
+    type: str
+    description:
+      - Width of columns for the sheet.
+      - It can be a size integer or the string "auto".
+      - If this size starts width a "<" sympbol, the width is in the autofit mode but limited to the interger specified.
+    required: false
+    default: auto
+
   create:
     type: bool
     description:
@@ -102,13 +111,15 @@ EXAMPLES = """
     file: "test1.xlsx"
     worksheet: "my_title"
     create: true
-
+    column_width: "<42"
+    #column_width: 50
 """
 
 
 def main():
 
     argument_spec = dict(
+        column_width=dict(type="str", required=False, default="auto"),
         create=dict(type="bool", required=False, default=False),
         data=dict(type="list", required=False),
         file=dict(type="str", required=True, aliases=["workbook"]),
@@ -128,6 +139,7 @@ def main():
     module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=False)
 
     # Extract our parameters
+    column_width = module.params.get("column_width")
     create = module.params.get("create")
     data = module.params.get("data")
     operation = module.params.get("operation")
@@ -201,6 +213,33 @@ def main():
             )
 
             new_worksheet.add_table(table)
+
+        # Adjust column width
+        for column in new_worksheet.columns:
+            letter = column[0].column_letter # Get the column name
+
+            if column_width.isnumeric():
+                # fixed
+                new_worksheet.column_dimensions[letter].width = column_width
+            else:
+                # auto
+                max_length = 0
+                letter = column[0].column_letter # Get the column name
+                for cell in column:
+                    try: # Necessary to avoid error on empty cells
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = int((max_length + 2) * 1.2)
+
+                if column_width.startswith('<'):
+                    column_width_int = int(column_width.split('<')[1])
+                    if adjusted_width > column_width_int:
+                        adjusted_width = column_width_int
+
+                new_worksheet.column_dimensions[letter].width = adjusted_width
+
 
         workbook.save(file_fullpath)
         module.exit_json(
