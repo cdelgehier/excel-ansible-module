@@ -193,7 +193,6 @@ def main():
             # sheet already exists
             workbook.remove(workbook["Sheet"])
 
-
         # write data
         headers = list(data[0].keys())
         new_worksheet.append(headers)
@@ -216,7 +215,7 @@ def main():
 
         # Adjust column width
         for column in new_worksheet.columns:
-            letter = column[0].column_letter # Get the column name
+            letter = column[0].column_letter  # Get the column name
 
             if column_width.isnumeric():
                 # fixed
@@ -224,22 +223,21 @@ def main():
             else:
                 # auto
                 max_length = 0
-                letter = column[0].column_letter # Get the column name
+                letter = column[0].column_letter  # Get the column name
                 for cell in column:
-                    try: # Necessary to avoid error on empty cells
+                    try:  # Necessary to avoid error on empty cells
                         if len(str(cell.value)) > max_length:
                             max_length = len(str(cell.value))
                     except:
                         pass
                 adjusted_width = int((max_length + 2) * 1.2)
 
-                if column_width.startswith('<'):
-                    column_width_int = int(column_width.split('<')[1])
+                if column_width.startswith("<"):
+                    column_width_int = int(column_width.split("<")[1])
                     if adjusted_width > column_width_int:
                         adjusted_width = column_width_int
 
                 new_worksheet.column_dimensions[letter].width = adjusted_width
-
 
         workbook.save(file_fullpath)
         module.exit_json(
