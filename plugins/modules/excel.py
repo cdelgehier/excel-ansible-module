@@ -60,6 +60,13 @@ options:
       - Data mmust be a list of dicts.
     required: false
 
+  delete_existing_sheet:
+    type: bool
+    description:
+      - The sheet with the same name will be deleted before write a new one.
+    required: false
+    default: true
+
   file:
     type: path
     description:
@@ -122,6 +129,7 @@ def main():
         column_width=dict(type="str", required=False, default="auto"),
         create=dict(type="bool", required=False, default=False),
         data=dict(type="list", required=False),
+        delete_existing_sheet=dict(type="bool", required=False, default=True),
         file=dict(type="str", required=True, aliases=["workbook"]),
         operation=dict(
             type="str",
@@ -142,6 +150,7 @@ def main():
     column_width = module.params.get("column_width")
     create = module.params.get("create")
     data = module.params.get("data")
+    delete_existing_sheet = module.params.get("delete_existing_sheet")
     operation = module.params.get("operation")
     if data is None and operation == "write":
         module.fail_json(
@@ -184,11 +193,15 @@ def main():
             workbook = openpyxl.load_workbook(filename=file_fullpath, data_only=True)
 
         sheetnames = workbook.sheetnames
-        if worksheet in sheetnames:
-            # sheet already exists
-            workbook.remove(workbook[worksheet])
+        if delete_existing_sheet:
+            if worksheet in sheetnames:
+                # sheet already exists
+                workbook.remove(workbook[worksheet])
 
-        new_worksheet = workbook.create_sheet(title=worksheet)
+            new_worksheet = workbook.create_sheet(title=worksheet)
+        else:
+            new_worksheet = workbook[worksheet]
+
         if "Sheet" in sheetnames:
             # sheet already exists
             workbook.remove(workbook["Sheet"])
