@@ -12,6 +12,7 @@ import openpyxl
 from openpyxl import Workbook
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.utils import get_column_letter
+from openpyxl.utils.cell import coordinate_to_tuple
 import os
 
 __metaclass__ = type
@@ -73,6 +74,13 @@ options:
       - The file name.
     required: true
     aliases: [ workbook ]
+
+  first_cell:
+    type: str
+    description:
+      - Coordinate of the first cell to write.
+    required: false
+    default: "A1"
 
   headers:
     type: bool
@@ -138,6 +146,7 @@ def main():
         data=dict(type="list", required=False),
         delete_existing_sheet=dict(type="bool", required=False, default=True),
         file=dict(type="str", required=True, aliases=["workbook"]),
+        first_cell=dict(type="str", required=False, default="A1"),
         headers=dict(type="bool", required=False, default=True),
         operation=dict(
             type="str",
@@ -169,6 +178,7 @@ def main():
         module.fail_json(
             msg="openpyxl does not support file format, only xlsx is supported for this module",
         )
+    first_cell = module.params.get("first_cell")
     headers = module.params.get("headers")
     path = module.params.get("path")
     table_name = module.params.get("table_name")
@@ -215,18 +225,31 @@ def main():
             workbook.remove(workbook["Sheet"])
 
         # write data
+        start_row, start_column = coordinate_to_tuple(first_cell)
+
         if headers:
             headers = list(data[0].keys())
-            new_worksheet.append(headers)
+            for index, key in enumerate(headers):
+                new_worksheet.cell(
+                    row=start_row, column=(index + start_column)
+                ).value = key
+            start_row += 1
 
-        for line in data:
-            new_worksheet.append(list(line.values()))
+        for line in range(len(data)):
+            for index, key in enumerate(data[line]):
+                new_worksheet.cell(
+                    row=(start_row + line), column=(start_column + index)
+                ).value = data[line][key]
 
         # create a table
         if table_name is not None:
 
-            # data_range = "A1:" + get_column_letter(new_worksheet.max_column) + str(new_worksheet.max_row)
-            data_range = new_worksheet.calculate_dimension()
+            data_range = (
+                "{}:".format(first_cell)
+                + get_column_letter(new_worksheet.max_column)
+                + str(new_worksheet.max_row)
+            )
+            # data_range = new_worksheet.calculate_dimension()
             mediumStyle = openpyxl.worksheet.table.TableStyleInfo(
                 name="TableStyleMedium9", showRowStripes=True
             )
