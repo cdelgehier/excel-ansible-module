@@ -82,10 +82,11 @@ options:
     required: false
     default: "A1"
 
-  headers:
+  headers_show:
     type: bool
     description:
       - Add headers to the table.
+      - When table_name is defined, the headers_show must be true
     required: false
     default: true
 
@@ -147,7 +148,7 @@ def main():
         delete_existing_sheet=dict(type="bool", required=False, default=True),
         file=dict(type="str", required=True, aliases=["workbook"]),
         first_cell=dict(type="str", required=False, default="A1"),
-        headers=dict(type="bool", required=False, default=True),
+        headers_show=dict(type="bool", required=False, default=True),
         operation=dict(
             type="str",
             default="write",
@@ -179,7 +180,7 @@ def main():
             msg="openpyxl does not support file format, only xlsx is supported for this module",
         )
     first_cell = module.params.get("first_cell")
-    headers = module.params.get("headers")
+    headers_show = module.params.get("headers_show")
     path = module.params.get("path")
     table_name = module.params.get("table_name")
     worksheet = module.params.get("worksheet")
@@ -227,7 +228,7 @@ def main():
         # write data
         start_row, start_column = coordinate_to_tuple(first_cell)
 
-        if headers:
+        if headers_show:
             headers = list(data[0].keys())
             for index, key in enumerate(headers):
                 new_worksheet.cell(
