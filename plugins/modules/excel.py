@@ -74,6 +74,13 @@ options:
     required: true
     aliases: [ workbook ]
 
+  headers:
+    type: bool
+    description:
+      - Add headers to the table.
+    required: false
+    default: true
+
   operation:
     type: str
     description:
@@ -131,6 +138,7 @@ def main():
         data=dict(type="list", required=False),
         delete_existing_sheet=dict(type="bool", required=False, default=True),
         file=dict(type="str", required=True, aliases=["workbook"]),
+        headers=dict(type="bool", required=False, default=True),
         operation=dict(
             type="str",
             default="write",
@@ -161,7 +169,7 @@ def main():
         module.fail_json(
             msg="openpyxl does not support file format, only xlsx is supported for this module",
         )
-
+    headers = module.params.get("headers")
     path = module.params.get("path")
     table_name = module.params.get("table_name")
     worksheet = module.params.get("worksheet")
@@ -207,8 +215,10 @@ def main():
             workbook.remove(workbook["Sheet"])
 
         # write data
-        headers = list(data[0].keys())
-        new_worksheet.append(headers)
+        if headers:
+            headers = list(data[0].keys())
+            new_worksheet.append(headers)
+
         for line in data:
             new_worksheet.append(list(line.values()))
 
